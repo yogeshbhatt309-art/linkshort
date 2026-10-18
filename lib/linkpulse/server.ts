@@ -17,7 +17,8 @@ const GUEST_COOKIE_MAX_AGE = 60 * 60 * 24 * 30
 
 export async function getAppContext(mode: 'view' | 'write' = 'view'): Promise<AppContext> {
   const supabase = await createServerSupabaseClient()
-  const { data: { claims } } = await supabase.auth.getClaims()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
   const userId = typeof claims?.sub === 'string' ? claims.sub : null
   const admin = createAdminClient()
 

@@ -13,7 +13,8 @@ export const dynamic = 'force-dynamic'
 
 async function getAdminActor() {
   const supabase = await createServerSupabaseClient()
-  const { data: { claims } } = await supabase.auth.getClaims()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
   const id = typeof claims?.sub === 'string' ? claims.sub : null
   if (!id) return null
   const admin = createAdminClient()

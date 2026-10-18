@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const supabase = await createServerSupabaseClient()
-  const { data: { claims } } = await supabase.auth.getClaims()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
   const id = typeof claims?.sub === 'string' ? claims.sub : null
   if (!id) return NextResponse.json({ user: null })
   const email = typeof claims.email === 'string' ? claims.email : undefined
