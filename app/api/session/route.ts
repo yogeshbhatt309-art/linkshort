@@ -10,7 +10,7 @@ export async function GET() {
   const claims = data?.claims
   const id = typeof claims?.sub === 'string' ? claims.sub : null
   if (!id) return NextResponse.json({ user: null })
-  const email = typeof claims.email === 'string' ? claims.email : undefined
+  const email = typeof claims?.email === 'string' ? claims.email : undefined
   const { data: profile } = await createAdminClient().from('profiles').select('role, display_name').eq('id', id).maybeSingle()
   return NextResponse.json({ user: { id, email, name: profile?.display_name ?? email?.split('@')[0] ?? 'Member', role: profile?.role === 'admin' ? 'admin' : 'user' } })
 }
