@@ -1,0 +1,28 @@
+'use client'
+
+import { useState } from 'react'
+import { CalendarDays, Layers3, Plus, MousePointerClick } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import type { CampaignRecord, LinkRecord } from '@/lib/linkpulse/types'
+
+export function CampaignManager({ campaigns, links, onChanged, onCreateLink }: { campaigns: CampaignRecord[]; links: LinkRecord[]; onChanged: () => void; onCreateLink: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [loading, setLoading] = useState(false)
+  async function create(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setLoading(true)
+    const response = await fetch('/api/campaigns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, description }) })
+    const result = await response.json(); setLoading(false)
+    if (!response.ok) return toast.error(result.error ?? 'Could not create campaign.')
+    toast.success('Campaign created'); setOpen(false); setName(''); setDescription(''); onChanged()
+  }
+  return <div className="space-y-5"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="text-lg font-semibold tracking-tight">Campaigns</h2><p className="mt-1 text-xs text-muted-foreground">Group links to keep launches and channels organized.</p></div><Button size="sm" onClick={() => setOpen(true)}><Plus className="size-4" />New campaign</Button></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{campaigns.map((campaign) => { const campaignLinks = links.filter((link) => link.campaign_id === campaign.id); const clicks = campaignLinks.reduce((sum, link) => sum + link.click_count, 0); return <Card key={campaign.id} className="border-white/[0.07] bg-card/80"><CardHeader><div className="mb-1 flex items-center justify-between"><span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary"><Layers3 className="size-4" /></span><span className="text-[10px] text-muted-foreground">{campaignLinks.length} links</span></div><CardTitle className="text-sm">{campaign.name}</CardTitle><CardDescription className="line-clamp-2 min-h-8 text-xs">{campaign.description || 'A focused group of short links.'}</CardDescription></CardHeader><CardContent><div className="grid grid-cols-2 gap-3 border-t border-border/70 pt-3"><Metric icon={<MousePointerClick className="size-3.5" />} label="All-time clicks" value={clicks.toLocaleString()} /><Metric icon={<CalendarDays className="size-3.5" />} label="Created" value={new Date(campaign.created_at).toLocaleDateString()} /></div><div className="mt-4 space-y-2">{campaignLinks.slice(0, 3).map((link) => <div className="flex items-center justify-between gap-3 text-xs" key={link.id}><span className="truncate">{link.title}</span><span className="shrink-0 tabular-nums text-muted-foreground">{link.click_count.toLocaleString()}</span></div>)}{!campaignLinks.length && <p className="text-[11px] text-muted-foreground">No links assigned yet.</p>}</div></CardContent></Card> })}{!campaigns.length && <Card className="border-dashed border-border bg-transparent md:col-span-2 xl:col-span-3"><CardContent className="flex min-h-64 flex-col items-center justify-center text-center"><span className="mb-3 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Layers3 className="size-5" /></span><p className="text-sm font-medium">Your campaigns start here</p><p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">Create a campaign, then attach short links to see their combined performance.</p><Button className="mt-4" size="sm" onClick={() => setOpen(true)}><Plus className="size-4" />Create campaign</Button></CardContent></Card>}</div><div className="flex justify-end"><Button variant="outline" size="sm" onClick={onCreateLink}>Create campaign link</Button></div><Dialog open={open} onOpenChange={setOpen}><DialogContent className="border-border/80 bg-card sm:max-w-md"><DialogHeader><DialogTitle>Create campaign</DialogTitle><DialogDescription>Give a related group of links a name and purpose.</DialogDescription></DialogHeader><form onSubmit={create} className="space-y-4"><FieldGroup><Field><FieldLabel htmlFor="campaign-name">Campaign name</FieldLabel><Input id="campaign-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Spring product launch" required minLength={2} maxLength={80} /></Field><Field><FieldLabel htmlFor="campaign-description">Description</FieldLabel><Textarea id="campaign-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Where this campaign runs and what it is for" maxLength={500} /></Field></FieldGroup><DialogFooter><Button variant="outline" type="button" onClick={() => setOpen(false)}>Cancel</Button><Button disabled={loading}>{loading ? 'Saving…' : 'Save campaign'}</Button></DialogFooter></form></DialogContent></Dialog></div>
+}
+function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) { return <div><p className="flex items-center gap-1.5 text-[10px] text-muted-foreground">{icon}{label}</p><p className="mt-1 text-sm font-semibold tabular-nums">{value}</p></div> }
